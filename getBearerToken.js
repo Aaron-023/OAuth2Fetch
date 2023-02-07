@@ -2,6 +2,7 @@
 // using the imported credentials. 
 // The auth token is exported to ./bearer-token.js
 
+import nodecron from 'node-cron'
 import fs from 'fs'
 import querystring from 'querystring'
 import { clientAuthCredentials } from './clientCredentials.js'
@@ -24,13 +25,22 @@ const options = {
   body: postData
 };
 
-fetch(clientAuthCredentials.endpoint, options)
-  .then((result) => result.json())
-  .then((data) => {
-    // The token doesn't need to be saved and will be stored as a const once project complete. 
-  fs.writeFile('./bearer-token.js', `const bToken = ${JSON.stringify(data)} \n\n export { bToken }`, (err) => {
-    if (err) throw err;
-    console.log('Bearer Token Retrieved!', data);
-  });
-  })
-  .catch((error) => console.error(error));
+async function getAuthToken() {
+  const response = await fetch(clientAuthCredentials.endpoint, options)
+    if(response.status === 200){
+      const data = await response.json()
+      fs.writeFile('./bearer-token.json', `${JSON.stringify(data)}`, (err) => {
+      console.log('Bearer Token Retrieved!', data);
+        if (err) { throw err; }
+      
+    })
+    } else {
+      console.log("some error")
+    }
+}
+
+
+
+nodecron.schedule('0,30 0-23 * * 1-5', () => {
+  getAuthToken()
+})
